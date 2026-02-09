@@ -43,6 +43,9 @@ async def update(interaction: discord.Interaction,
     await interaction.response.defer(ephemeral=True)
     storage = load_storage()
     entry = storage.get(str(manga_id))
+    if not entry:
+        await interaction.edit_original_response(content="No tracked manga with that ID.")
+        return
     review_flag = entry["reviewed"]
     if not entry:
         await interaction.edit_original_response(
@@ -62,10 +65,10 @@ async def update(interaction: discord.Interaction,
             content="Original message was deleted."
         )
         return
-    
-    manga = send_status_query(manga_id)
-    manga_status = manga[1]
-    manga_chapters = manga[0]
+    if not manual:
+        manga = send_status_query(manga_id)
+        manga_status = manga[1]
+        manga_chapters = manga[0]
     embed = message.embeds[0]
     if chapter:
         embed.set_field_at(index= 0 ,name = f"**Chapters: **", value = f"{chapter}" , inline= True)
@@ -80,7 +83,7 @@ async def update(interaction: discord.Interaction,
     if compl_date:
         embed.set_field_at(index= 2, name = "**Date finished reading: **" , value = f"{compl_date}" , inline= True)
     if rating:
-        embed.set_field_at(index = 3, name = f"**Rating:**", value = f"{rating}" , inline= False)
+        embed.set_field_at(index = 3, name = f"**Rating:**", value = f"{rating}⭐" , inline= False)
     
     if review:
         if review_flag:
@@ -156,7 +159,7 @@ async def add(
     cover_img_link = send_img_query(manga_id)
     if not compl_date:
         today = date.today()
-        formatted_date = today.strftime("%m/%d/%y")
+        formatted_date = today.strftime("%d/%m/%y")
     else:
          formatted_date = compl_date
     if rating:
@@ -173,7 +176,7 @@ async def add(
             color=discord.Color.blue()
     )
     embed.set_author(name = author_name, icon_url = author_avatar_url)
-
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470477856995016902/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452.png?ex=698b70b9&is=698a1f39&hm=81c1b99e896957bbcde34f67ec5d814b950c8f0136b80f27185c9a4048b1f63b&")
     embed.set_image(url= cover_img_link)
     embed.add_field(name = f"**Chapters: **", value = f"{manga_chapters}" , inline= True)
     embed.add_field(name = f"**Status: **", value = f"{manga_status}" , inline= True)
@@ -214,11 +217,11 @@ async def manualadd(
     chap_num: float,
     img_url: Optional[str]
     ):
-    await interaction.response.defer(ephemeral=False)
+    await interaction.response.defer(ephemeral=True)
     reviewed = False
     if not compl_date:
         today = date.today()
-        formatted_date = today.strftime("%m/%d/%y")
+        formatted_date = today.strftime("%d/%m/%y")
     else:
          formatted_date = compl_date
     if rating:
@@ -235,6 +238,7 @@ async def manualadd(
             color=discord.Color.blue()
     )
     embed.set_author(name = author_name, icon_url = author_avatar_url)
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470477856995016902/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452.png?ex=698b70b9&is=698a1f39&hm=81c1b99e896957bbcde34f67ec5d814b950c8f0136b80f27185c9a4048b1f63b&")
 
     if img_url:
         embed.set_image(url= img_url)
