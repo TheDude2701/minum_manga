@@ -176,7 +176,7 @@ async def add(
             color=discord.Color.blue()
     )
     embed.set_author(name = author_name, icon_url = author_avatar_url)
-    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470477856995016902/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452.png?ex=698b70b9&is=698a1f39&hm=81c1b99e896957bbcde34f67ec5d814b950c8f0136b80f27185c9a4048b1f63b&")
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470479316428128472/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452_2.png?ex=698b7215&is=698a2095&hm=4a42f6418b9fcf3c865984c6bdbcbef6ba6930e854dea4dc586625eec584ac8c&")
     embed.set_image(url= cover_img_link)
     embed.add_field(name = f"**Chapters: **", value = f"{manga_chapters}" , inline= True)
     embed.add_field(name = f"**Status: **", value = f"{manga_status}" , inline= True)
@@ -238,7 +238,7 @@ async def manualadd(
             color=discord.Color.blue()
     )
     embed.set_author(name = author_name, icon_url = author_avatar_url)
-    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470477856995016902/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452.png?ex=698b70b9&is=698a1f39&hm=81c1b99e896957bbcde34f67ec5d814b950c8f0136b80f27185c9a4048b1f63b&")
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470479316428128472/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452_2.png?ex=698b7215&is=698a2095&hm=4a42f6418b9fcf3c865984c6bdbcbef6ba6930e854dea4dc586625eec584ac8c&")
 
     if img_url:
         embed.set_image(url= img_url)
