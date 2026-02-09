@@ -1,4 +1,6 @@
 import requests
+import random
+import string
 
 url = 'https://graphql.anilist.co'
 manga_name = " "
@@ -41,6 +43,30 @@ query ($id: Int) {
   }
 }
 '''
+
+status_query ='''
+query($id: Int) {
+    Media (id: $id, type: MANGA) {
+        id
+        title{
+            romaji
+            english
+        }
+        chapters
+        status
+    }
+}
+'''
+def send_status_query(id):
+    variables = {
+    'id': f'{int(id)}'
+    }
+    response = requests.post(url, json={'query': status_query, 'variables': variables})
+    json_res = response.json()
+    chapters = json_res.get('data', {}).get('Media', {}).get('chapters')
+    status = json_res.get('data', {}).get('Media', {}).get('status')
+    return [chapters, status]
+
 def send_id_query(manga_title):
   variables = {
     'search': f'{manga_title}'
@@ -52,7 +78,7 @@ def send_id_query(manga_title):
     return None
   manga_info = media_list[0]
   manga_chapters = manga_info.get('chapters')
-  if manga_chapters == "null":
+  if not manga_chapters:
     manga_chapters = "Unknown"
   manga = [int(manga_info.get('id', 0)),
     manga_info.get('title', {}).get('romaji', "Unknown Title"),
@@ -88,8 +114,11 @@ def send_desc_query(id):
   media_list = res_json.get('data', {}).get('Media', {}).get('description')
   if not media_list:
     return "No description provided..."
-  cleaned_desc = media_list.split("<br>")[0]
+  clean_media_list = media_list.replace("<b>", "").replace("</b>", "")
+  cleaned_desc = clean_media_list.split("<br>")[0]
   return cleaned_desc
-  
+
+def random_code():
+    return  "{:010d}".format(random.randint(0, 10**10 - 1))
   
 

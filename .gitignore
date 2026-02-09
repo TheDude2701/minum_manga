@@ -2,7 +2,9 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+message.json
+config.env
+.env
 # C extensions
 *.so
 
