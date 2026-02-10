@@ -139,7 +139,7 @@ def send_desc_query(id):
   media_list = res_json.get('data', {}).get('Media', {}).get('description')
   if not media_list:
     return "No description provided..."
-  clean_media_list = media_list.replace("<b>", "").replace("</b>", "")
+  clean_media_list = media_list.replace("<b>", "").replace("</b>", "").replace("<BR>", " ").split("<i>")[0]
   cleaned_desc = clean_media_list.split("<br>")[0]
   return cleaned_desc
 
