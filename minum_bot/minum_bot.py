@@ -12,6 +12,7 @@ from minum_bot.message_store import load_storage, save_storage
 dotenv_path = Path(__file__).resolve().parent.parent / "config.env"
 load_dotenv(dotenv_path=dotenv_path)
 GUILD_ID = int(os.getenv("SERVER_ID"))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 if not GUILD_ID:
     raise RuntimeError("GUILD_ID is not set")
 intents = discord.Intents.default()
@@ -45,6 +46,12 @@ async def update(interaction: discord.Interaction,
     entry = storage.get(str(manga_id))
     if not entry:
         await interaction.edit_original_response(content="No tracked manga with that ID.")
+        return
+    user = interaction.user
+    if  not user.id == entry["sender"]:
+        await interaction.edit_original_response(
+            content="Nice try... You weren't the one that added that entry!"
+        )
         return
     review_flag = entry["reviewed"]
     if not entry:
@@ -104,7 +111,12 @@ async def updateprogress(
     await interaction.response.defer(ephemeral=True)
     storage = load_storage()
     entry = storage.get(str(manga_id))
-
+    user = interaction.user
+    if  not user.id == entry["sender"]:
+        await interaction.edit_original_response(
+            content="Nice try... You weren't the one that added that entry!"
+        )
+        return
     if not entry:
         await interaction.edit_original_response(
             content="No tracked manga with that ID."
@@ -166,15 +178,31 @@ async def add(
          usr_rating = str(rating) + "⭐"
     else:
          usr_rating = "*"
+    
     description = send_desc_query(manga_id)
-    author_name = interaction.user.display_name
-    author_avatar_url = interaction.user.display_avatar.url
-    embed = discord.Embed(
+    storage = load_storage()
+    if interaction.channel_id == CHANNEL_ID: 
+        count = 1 + sum(
+            1
+            for entry in storage.values()
+            if entry["channel_id"] == CHANNEL_ID
+        )
+        embed = discord.Embed(
+            title= f"{count}. {manga_title}",
+            url = f"{manga_url}",
+            description= f"{description}",
+            color=discord.Color.blue()
+        )
+    else:
+        embed = discord.Embed(
             title= f"{manga_title}",
             url = f"{manga_url}",
             description= f"{description}",
             color=discord.Color.blue()
-    )
+        )
+    author_name = interaction.user.display_name
+    author_avatar_url = interaction.user.display_avatar.url
+    user = interaction.user
     embed.set_author(name = author_name, icon_url = author_avatar_url)
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470479316428128472/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452_2.png?ex=698b7215&is=698a2095&hm=4a42f6418b9fcf3c865984c6bdbcbef6ba6930e854dea4dc586625eec584ac8c&")
     embed.set_image(url= cover_img_link)
@@ -189,12 +217,12 @@ async def add(
     embed.set_footer(text = f"https://github.com/TheDude2701/minum_manga                                MangaID: {manga_id}")
     try:
         message = await interaction.channel.send(embed=embed)
-        storage = load_storage()
         storage[str(manga_id)] = {
             "channel_id": interaction.channel.id,
             "message_id": message.id,
             "total": manga_chapters,
-            "reviewed": reviewed
+            "reviewed": reviewed,
+            "sender": user.id
         }
         save_storage(storage)
         await interaction.edit_original_response(content="Completed")
@@ -228,15 +256,30 @@ async def manualadd(
          usr_rating = str(rating) + "⭐"
     else:
          usr_rating = "*"
-    manga_id = random_code()
-    author_name = interaction.user.display_name
-    author_avatar_url = interaction.user.display_avatar.url
-    embed = discord.Embed(
+    storage = load_storage()
+    if interaction.channel_id == CHANNEL_ID: 
+        count = 1 + sum(
+            1
+            for entry in storage.values()
+            if entry["channel_id"] == CHANNEL_ID
+        )
+        embed = discord.Embed(
+            title= f"{count}. {manga_name}",
+            url = f"{manga_url}",
+            description= f"{descr}",
+            color=discord.Color.blue()
+        )
+    else:
+        embed = discord.Embed(
             title= f"{manga_name}",
             url = f"{manga_url}",
             description= f"{descr}",
             color=discord.Color.blue()
-    )
+        )
+    manga_id = random_code()
+    user = interaction.user
+    author_name = interaction.user.display_name
+    author_avatar_url = interaction.user.display_avatar.url
     embed.set_author(name = author_name, icon_url = author_avatar_url)
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470479316428128472/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452_2.png?ex=698b7215&is=698a2095&hm=4a42f6418b9fcf3c865984c6bdbcbef6ba6930e854dea4dc586625eec584ac8c&")
 
@@ -253,12 +296,13 @@ async def manualadd(
     embed.set_footer(text = f"https://github.com/TheDude2701/minum_manga                                MangaID: {manga_id}")
     try:
         message = await interaction.channel.send(embed=embed)
-        storage = load_storage()
+
         storage[str(manga_id)] = {
             "channel_id": interaction.channel.id,
             "message_id": message.id,
             "total": chap_num,
-            "reviewed": reviewed
+            "reviewed": reviewed,
+            "sender": user.id
         }
         save_storage(storage)
         await interaction.edit_original_response(content="Completed")
