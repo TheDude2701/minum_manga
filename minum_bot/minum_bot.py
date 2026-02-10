@@ -154,7 +154,7 @@ async def add(
     manga_chapters = manga[2]
     manga_status = manga[3]
     if not manga or not manga[0]:
-        await interaction.response.send_message("No manga found by that title!")
+        await interaction.edit_original_response(content="No manga found by that title")
         return
     cover_img_link = send_img_query(manga_id)
     if not compl_date:
@@ -267,3 +267,42 @@ async def manualadd(
             f"Failed to send embed: Invalid URL or other error.\nDetails: {e}"
         )    
 
+@bot.tree.command(name="search", description="Search up a manga in anilist by name", guild = discord.Object(id=GUILD_ID))
+async def search(
+    interaction: discord.Interaction, 
+    manga_name: str, 
+):
+    await interaction.response.defer(ephemeral=True)
+    manga = send_id_query(manga_title = manga_name)
+    if not manga or not manga[0]:
+        await interaction.edit_original_response(content="No manga found by that title")
+        return
+    manga_id = int(manga[0])
+    manga_title = manga[1]
+    manga_chapters = manga[2]
+    manga_status = manga[3]
+    cover_img_link = send_img_query(manga_id)
+    description = send_desc_query(manga_id)
+    author_name = interaction.user.display_name
+    author_avatar_url = interaction.user.display_avatar.url
+    url_clean = manga_name.replace(" ", "-")
+    manga_url = f"https://anilist.co/manga/{manga_id}/{url_clean}/"
+    embed = discord.Embed(
+            title= f"{manga_title}",
+            url = f"{manga_url}",
+            description= f"{description}",
+            color=discord.Color.blue()
+    )
+    embed.set_author(name = author_name, icon_url = author_avatar_url)
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1368305647115829248/1470479316428128472/toppng.com-anime-loli-kawaii-chibi-cute-nice-books-niconiconii-sleeping-cute-animated-girl-499x452_2.png?ex=698b7215&is=698a2095&hm=4a42f6418b9fcf3c865984c6bdbcbef6ba6930e854dea4dc586625eec584ac8c&")
+    embed.set_image(url= cover_img_link)
+    embed.add_field(name = f"**Chapters: **", value = f"{manga_chapters}" , inline= True)
+    embed.add_field(name = f"**Status: **", value = f"{manga_status}" , inline= True)
+    embed.set_footer(text = f"https://github.com/TheDude2701/minum_manga                                MangaID: {manga_id}")
+    try:
+        await interaction.channel.send(embed=embed) 
+        await interaction.edit_original_response(content="Completed")
+    except Exception as e:
+        await interaction.channel.send(
+            f"Failed to send embed: Invalid URL or other error.\nDetails: {e}"
+        )
