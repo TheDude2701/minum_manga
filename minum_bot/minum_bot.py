@@ -31,6 +31,7 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
         latency = round(bot.latency * 1000)
         await interaction.response.send_message(f"Pong! {latency}ms")
+        
 @bot.tree.command(name="update", description="Update your reading progress on the manga", guild = discord.Object(id=GUILD_ID))
 async def update(interaction: discord.Interaction,
     manga_id: int,
@@ -43,22 +44,18 @@ async def update(interaction: discord.Interaction,
 ):
     await interaction.response.defer(ephemeral=True)
     storage = load_storage()
-    entry = storage.get(str(manga_id))
-    if not entry:
-        await interaction.edit_original_response(content="No tracked manga with that ID.")
-        return
     user = interaction.user
+    key = f"{int(manga_id)}:{int(user.id)}"
+    entry = storage.get(key)
+    if not entry:
+        await interaction.edit_original_response(content="None of your tracked mangas matched with that ID.")
+        return
     if  not user.id == entry["sender"]:
         await interaction.edit_original_response(
             content="Nice try... You weren't the one that added that entry!"
         )
         return
     review_flag = entry["reviewed"]
-    if not entry:
-        await interaction.edit_original_response(
-            content="No tracked manga with that ID."
-        )
-        return
     channel = bot.get_channel(entry["channel_id"])
     if not channel:
         await interaction.edit_original_response(
@@ -79,9 +76,17 @@ async def update(interaction: discord.Interaction,
     embed = message.embeds[0]
     if chapter:
         embed.set_field_at(index= 0 ,name = f"**Chapters: **", value = f"{chapter}" , inline= True)
+        storage[key]["total"] = chapter
+        save_storage(storage)
+        progress = entry["progress"]
+        embed.set_field_at(index = 4, name = f"**Progress: **", value = f"{progress}/{chapter}" )
     else:
         if not manual:
-            embed.set_field_at(index= 0 ,name = f"**Chapters: **", value = f"{manga_chapters}" , inline= True) 
+            embed.set_field_at(index= 0 ,name = f"**Chapters: **", value = f"{manga_chapters}" , inline= True)
+            storage[key]["total"] = manga_chapters
+            save_storage(storage) 
+            progress = entry["progress"]
+            embed.set_field_at(index = 4, name = f"**Progress: **", value = f"{progress}/{chapter}" )
     if status:
         embed.set_field_at(index= 1, name = f"**Status: **", value = f"{status}" , inline= True)
     else:
@@ -93,10 +98,12 @@ async def update(interaction: discord.Interaction,
         embed.set_field_at(index = 3, name = f"**Rating:**", value = f"{rating}⭐" , inline= False)
     
     if review:
-        if review_flag:
+        if review_flag == True:
             embed.set_field_at(index = 5, name = "**Review: **", value =f"||{review}||"  , inline= False)
         else:
             embed.add_field(name = "**Review: **", value =f"||{review}||"  , inline= False)
+            storage[key]["reviewed"] = True
+            save_storage(storage)
     await message.edit(embed=embed)
     await interaction.edit_original_response(
         content="Progress updated!"
@@ -110,16 +117,17 @@ async def updateprogress(
 ):
     await interaction.response.defer(ephemeral=True)
     storage = load_storage()
-    entry = storage.get(str(manga_id))
     user = interaction.user
-    if  not user.id == entry["sender"]:
-        await interaction.edit_original_response(
-            content="Nice try... You weren't the one that added that entry!"
-        )
-        return
+    key = f"{int(manga_id)}:{int(user.id)}"
+    entry = storage.get(key)
     if not entry:
         await interaction.edit_original_response(
-            content="No tracked manga with that ID."
+            content="None of your tracked mangas matched with that ID."
+        )
+        return
+    if not user.id == entry["sender"]:
+        await interaction.edit_original_response(
+            content="Nice try... You weren't the one that added that entry!"
         )
         return
     channel = bot.get_channel(entry["channel_id"])
@@ -143,6 +151,8 @@ async def updateprogress(
         value=f"{new_progress}/{total}",
         inline=True
     )
+    storage[key]["progress"] = new_progress
+    save_storage(storage)
     await message.edit(embed=embed)
     await interaction.edit_original_response(
         content="Progress updated!"
@@ -217,12 +227,14 @@ async def add(
     embed.set_footer(text = f"https://github.com/TheDude2701/minum_manga                                MangaID: {manga_id}")
     try:
         message = await interaction.channel.send(embed=embed)
-        storage[str(manga_id)] = {
+        key = f"{int(manga_id)}:{int(user.id)}"
+        storage[key] = {
             "channel_id": interaction.channel.id,
             "message_id": message.id,
             "total": manga_chapters,
             "reviewed": reviewed,
-            "sender": user.id
+            "sender": user.id,
+            "progress": progress
         }
         save_storage(storage)
         await interaction.edit_original_response(content="Completed")
@@ -296,13 +308,14 @@ async def manualadd(
     embed.set_footer(text = f"https://github.com/TheDude2701/minum_manga                                MangaID: {manga_id}")
     try:
         message = await interaction.channel.send(embed=embed)
-
-        storage[str(manga_id)] = {
+        key = f"{manga_id}:{user.id}"
+        storage[key] = {
             "channel_id": interaction.channel.id,
             "message_id": message.id,
             "total": chap_num,
             "reviewed": reviewed,
-            "sender": user.id
+            "sender": user.id,
+            "progress": progress
         }
         save_storage(storage)
         await interaction.edit_original_response(content="Completed")
